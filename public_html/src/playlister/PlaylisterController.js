@@ -58,11 +58,34 @@ export default class PlaylisterController {
         // HANDLER FOR REDO BUTTON
         document.getElementById("redo-button").onmousedown = (event) => {
             this.model.redo();
+            this.model.view.enableButton("undo-button");
+            this.model.view.enableButton("redo-button");
         }
         // HANDLER FOR CLOSE LIST BUTTON
         document.getElementById("close-button").onmousedown = (event) => {
             this.model.unselectAll();
             this.model.unselectCurrentList();
+
+            //close the list, disable all buttons except add-list
+            this.model.view.enableButton("add-list-button");
+            this.model.view.disableButton("add-song-button");
+            this.model.view.disableButton("undo-button");
+            this.model.view.disableButton("redo-button");
+            this.model.view.disableButton("close-button");
+
+
+        }
+        // HANDLER FOR ADDING A NEW SONG BUTTON
+        document.getElementById("add-song-button").onmousedown = (event) => {
+            //let newSong = this.model.addNewSong("Untitled", "Unknown","dQw4w9WgXcQ");
+            let newSong =  { //create a song object
+                title:"Untitled", 
+                artist:"Unknown",
+                youTubeId:"dQw4w9WgXcQ"
+            };
+            //add the transaction into the stack and perform do
+            this.model.addSongTransaction(newSong.title, newSong.artist, newSong.youTubeId);
+            this.model.view.enableButton("undo-button");
         }
     }
 
@@ -90,6 +113,8 @@ export default class PlaylisterController {
             // CLOSE THE MODAL
             let deleteListModal = document.getElementById("delete-list-modal");
             deleteListModal.classList.remove("is-visible");
+            this.model.view.enableButton("add-list-button");
+
         }
 
         // RESPOND TO THE USER CLOSING THE DELETE PLAYLIST MODAL
@@ -101,7 +126,76 @@ export default class PlaylisterController {
             // CLOSE THE MODAL
             let deleteListModal = document.getElementById("delete-list-modal");
             deleteListModal.classList.remove("is-visible");
-        }        
+            this.model.view.enableButton("add-list-button");
+
+        }      
+        
+        // RESPOND TO THE USER CONFIRMING TO DELETE A SONG
+        let deleteSongConfirmButton = document.getElementById("delete-song-confirm-button");
+        deleteSongConfirmButton.onclick = (event) => {
+            // NOTE THAT WE SET THE ID OF THE LIST TO REMOVE
+            // IN THE MODEL OBJECT AT THE TIME THE ORIGINAL
+            // BUTTON PRESS EVENT HAPPENED
+            let deleteSongIndex = this.model.getDeleteSongIndex();
+
+            // DELETE THE SONG, THIS IS NOT UNDOABLE
+            this.model.removeSongTransaction(deleteSongIndex);
+            //this.model.removeSong(deleteSongIndex);
+
+            // ALLOW OTHER INTERACTIONS
+            this.model.toggleConfirmDialogOpen();
+
+            // CLOSE THE MODAL
+            let deleteSongModal = document.getElementById("delete-song-modal");
+            deleteSongModal.classList.remove("is-visible");
+        }
+
+        // RESPOND TO THE USER CLOSING THE DELETE SONG MODAL
+        let deleteSongCancelButton = document.getElementById("delete-song-cancel-button");
+        deleteSongCancelButton.onclick = (event) => {
+            // ALLOW OTHER INTERACTIONS
+            this.model.toggleConfirmDialogOpen();
+            
+            // CLOSE THE MODAL
+            let deleteSongModal = document.getElementById("delete-song-modal");
+            deleteSongModal.classList.remove("is-visible");
+        }      
+
+         // RESPOND TO THE USER CONFIRMING TO EDIT A PLAYLIST
+         let editListConfirmButton = document.getElementById("edit-song-confirm-button");
+         editListConfirmButton.onclick = (event) => {
+             // NOTE THAT WE SET THE INDEX OF THE SONG TO EDIT
+             // IN THE MODEL OBJECT AT THE TIME THE ORIGINAL
+             // BUTTON PRESS EVENT HAPPENED
+             let editSongIndex = this.model.getEditSongIndex();
+             let newSongName=document.getElementById("edit-song-prompt").value;
+             let newArtistName=document.getElementById("edit-artist-prompt").value;
+             let newYoutubeId=document.getElementById("edit-youtubeid-prompt").value;
+
+             // EDIT THE LIST, THIS IS NOT UNDOABLE
+             //this.model.editSong(editSongIndex,newSongName,newArtistName,newYoutubeId);
+             this.model.editSongTransaction(editSongIndex,newSongName,newArtistName,newYoutubeId);
+             
+             // ALLOW OTHER INTERACTIONS
+             this.model.toggleConfirmDialogOpen();
+ 
+             // CLOSE THE MODAL
+             let editSongModal = document.getElementById("edit-song-modal");
+             editSongModal.classList.remove("is-visible");
+             
+         }
+
+        // RESPOND TO THE USER CLOSING THE EDIT SONG MODAL
+        let editSongCancelButton = document.getElementById("edit-song-cancel-button");
+        editSongCancelButton.onclick = (event) => {
+            // ALLOW OTHER INTERACTIONS
+            this.model.toggleConfirmDialogOpen();
+            
+            // CLOSE THE MODAL
+            let editSongModal = document.getElementById("edit-song-modal");
+            editSongModal.classList.remove("is-visible");
+        }  
+
     }
 
     /*
@@ -123,6 +217,14 @@ export default class PlaylisterController {
 
             // GET THE SELECTED LIST
             this.model.loadList(id);
+
+            //selected to edit this list, so disable and enable the buttons
+            this.model.view.disableButton("add-list-button");
+            this.model.view.enableButton("add-song-button");
+            this.model.view.enableButton("close-button");
+
+
+
         }
         // HANDLES DELETING A PLAYLIST
         document.getElementById("delete-list-" + id).onmousedown = (event) => {
@@ -182,6 +284,7 @@ export default class PlaylisterController {
             textInput.value = "";
             textInput.value = temp;
         }
+        
     }
 
     /*
@@ -194,6 +297,7 @@ export default class PlaylisterController {
         are songs in the playlist, and users can add and remove songs.
     */
     registerItemHandlers() {
+        
         // SETUP THE HANDLERS FOR ALL SONG CARDS, WHICH ALL GET DONE
         // AT ONCE EVERY TIME DATA CHANGES, SINCE IT GETS REBUILT EACH TIME
         for (let i = 0; i < this.model.getPlaylistSize(); i++) {
@@ -238,6 +342,71 @@ export default class PlaylisterController {
                 }
             }
         }
+
+        //FOR DELETING A SONG
+        for (let i = 0; i < this.model.getPlaylistSize(); i++) {
+            // GET THE CARD
+            let card = document.getElementById("delete-song-playlist-card-" + (i + 1));
+         // HANDLES DELETING A SONG
+            card.onmousedown = (event) => {
+            // DON'T PROPOGATE THIS INTERACTION TO LOWER-LEVEL CONTROLS
+            this.ignoreParentClick(event);
+            
+            // RECORD THE INDEX OF THE SONG THE USER WISHES TO DELETE
+            // SO THAT THE MODAL KNOWS WHICH ONE IT IS
+            this.model.setDeleteSongIndex(i);
+
+            // VERIFY THAT THE USER REALLY WANTS TO DELETE THE SONG
+            // THE CODE BELOW OPENS UP THE LIST DELETE VERIFICATION DIALOG
+            let songName = this.model.getSong(i).title;
+            let deleteSpanSong = document.getElementById("delete-song-span");
+            deleteSpanSong.innerHTML = "";
+            deleteSpanSong.appendChild(document.createTextNode(songName));
+            let deleteSongModal = document.getElementById("delete-song-modal");
+
+            // OPEN UP THE DIALOG
+            deleteSongModal.classList.add("is-visible");
+            this.model.toggleConfirmDialogOpen();
+        }
+    }
+
+        //FOR EDITING A SONG
+        for (let i = 0; i < this.model.getPlaylistSize(); i++) {
+            // GET THE CARD
+            let card = document.getElementById("playlist-card-" + (i + 1));
+         // HANDLES EDITING A SONG
+            card.ondblclick = (event) => {
+            // DON'T PROPOGATE THIS INTERACTION TO LOWER-LEVEL CONTROLS
+            this.ignoreParentClick(event);
+            
+            // RECORD THE INDEX OF THE SONG THE USER WISHES TO EDIT
+            // SO THAT THE MODAL KNOWS WHICH ONE IT IS
+            this.model.setEditSongIndex(i);
+
+            // VERIFY THAT THE USER REALLY WANTS TO DELETE THE SONG
+            // THE CODE BELOW OPENS UP THE LIST DELETE VERIFICATION DIALOG
+        
+            
+           // let songName = this.model.getSong(i).title;
+            document.getElementById("edit-song-prompt").value=this.model.getSong(i).title;
+            document.getElementById("edit-artist-prompt").value=this.model.getSong(i).artist;
+            document.getElementById("edit-youtubeid-prompt").value=this.model.getSong(i).youTubeId;
+            
+           // document.getElementById("edit-song-prompt").setAttribute("value","empty");
+           // document.getElementById("edit-artist-prompt").setAttribute("value","empty");
+           // document.getElementById("edit-youtubeid-prompt").setAttribute("value","empty");
+            
+            let editSongModal = document.getElementById("edit-song-modal");
+           
+
+            // OPEN UP THE DIALOG
+            editSongModal.classList.add("is-visible");
+            this.model.toggleConfirmDialogOpen();
+        }
+
+        
+    }
+
     }
 
     /*

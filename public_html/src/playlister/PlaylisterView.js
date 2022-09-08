@@ -18,9 +18,15 @@ export default class PlaylisterView {
     init() {
         // @todo - ONCE YOU IMPLEMENT THE FOOLPROOF DESIGN STUFF YOU SHOULD PROBABLY
         // START THESE BUTTONS OFF AS DISABLED
-        this.enableButton('undo-button');
-        this.enableButton('redo-button');
-        this.enableButton('close-button');
+       // this.enableButton('undo-button');
+        //this.enableButton('redo-button');
+        //this.enableButton('close-button');
+        this.disableButton("add-song-button");
+        this.disableButton("undo-button");
+        this.disableButton("redo-button");
+        this.disableButton("close-button");
+        this.enableButton("add-list-button");
+
     }
 
     /*
@@ -114,11 +120,28 @@ export default class PlaylisterView {
             itemDiv.id = "playlist-card-" + (i + 1);
 
             // PUT THE CONTENT INTO THE CARD
+            let numberedCards=document.createTextNode(i+1+"."); //label each song with numbers 
             let itemText = document.createTextNode(song.title + " by " + song.artist);
-            itemDiv.appendChild(itemText);
+            let a=document.createElement("a"); //create anchor element
+            a.appendChild(itemText); //append the textnode to anchor element
+            a.href="https://www.youtube.com/watch?v="+song.youTubeId; //set the href property
+            a.title=song.title + " by " + song.artist;//set the title
+            itemDiv.appendChild(numberedCards);
+            //itemDiv.appendChild(itemText);
+            itemDiv.appendChild(a); //append the anchor element to the card
+
+             // MAKE THE DELETE LIST BUTTON FOR THIS SONG
+            let deleteButton = document.createElement("input");
+            deleteButton.setAttribute("type", "button");
+            deleteButton.setAttribute("id", "delete-song-" + itemDiv.id);
+            deleteButton.setAttribute("class", "song-card-button");
+            deleteButton.setAttribute("value", "X");
+            itemDiv.appendChild(deleteButton);
+
 
             // AND PUT THE CARD INTO THE UI
             itemsDiv.appendChild(itemDiv);
+
         }
         // NOW THAT THE CONTROLS EXIST WE CAN REGISTER EVENT
         // HANDLERS FOR THEM
@@ -216,4 +239,6 @@ export default class PlaylisterView {
             statusBar.innerHTML = '';
         }
     }
+
+    
 }

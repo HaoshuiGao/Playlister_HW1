@@ -1,6 +1,9 @@
 import jsTPS from "../common/jsTPS.js";
 import Playlist from "./Playlist.js";
+import AddSong_Transaction from "./transactions/AddSong_Transaction.js";
+import EditSong_Transaction from "./transactions/EditSong_Transaction.js";
 import MoveSong_Transaction from "./transactions/MoveSong_Transaction.js";
+import RemoveSong_Transaction from "./transactions/RemoveSong_Transaction.js";
 
 /**
  * PlaylisterModel.js
@@ -76,12 +79,54 @@ export default class PlaylisterModel {
         return this.currentList.songs[index];
     }
 
+    //find the songIndex for delete song
+    getSongIndex(id) {
+        for (let i = 0; i < this.playlists.songs.length; i++) {
+            let song = this.playlists.songs[i];
+            if (song.id === id) {
+                return i;
+            }
+        }
+        return -1;
+    }
+
     getDeleteListId() {
         return this.deleteListId;
     }
 
     setDeleteListId(initId) {
         this.deleteListId = initId;
+    }
+//self
+    getDeleteSongIndex() {
+        return this.deleteSongIndex;
+    }
+//self
+    setDeleteSongIndex(initId) {
+        this.deleteSongIndex = initId;
+    }
+    //self
+    getEditSongIndex(){
+        return this.editSongIndex;
+    }
+
+    //self
+    setEditSongIndex(initId){
+        this.editSongIndex=initId;
+    }
+    //flag to do addSong transaction
+    getIsAdded(){
+        return this.isAdded;
+    }
+    setIsAdded(initId){
+        this.isAdded=initId;
+    }
+    //flag to do removeSong transaction
+    getIsRemoved(){
+        return this.isRemoved;
+    }
+    setIsRemoved(initId){
+        this.isRemoved=initId;
     }
 
     toggleConfirmDialogOpen() {
@@ -231,6 +276,22 @@ export default class PlaylisterModel {
         }
         this.saveLists();
     }
+    //remove or delete the song
+    removeSong(index){
+        this.currentList.songs.splice(index,1);
+        this.view.refreshPlaylist(this.currentList);
+        this.saveLists();
+
+    }
+
+    editSong(index,newSong,newArtist,newYoutubeId){
+        this.currentList.songs[index].title=newSong;
+        this.currentList.songs[index].artist=newArtist;
+        this.currentList.songs[index].youTubeId=newYoutubeId;
+        this.view.refreshPlaylist(this.currentList);
+        this.saveLists();
+
+    }
 
     // NEXT WE HAVE THE FUNCTIONS THAT ACTUALLY UPDATE THE LOADED LIST
 
@@ -267,5 +328,42 @@ export default class PlaylisterModel {
         let transaction = new MoveSong_Transaction(this, fromIndex, onIndex);
         this.tps.addTransaction(transaction);
         this.view.updateToolbarButtons(this);
+    }
+
+    addSongTransaction(initSong, initArtist,initYoutubeId){
+        let transaction=new AddSong_Transaction(this,initSong, initArtist,initYoutubeId);
+        this.tps.addTransaction(transaction);
+        this.view.updateToolbarButtons(this);
+    }
+
+    removeSongTransaction(indexToRemove){
+        let deletedSong=this.currentList.songs[this.deleteSongIndex];
+        let transaction=new RemoveSong_Transaction(this, indexToRemove,deletedSong);
+        this.tps.addTransaction(transaction);
+        this.view.updateToolbarButtons(this);
+    }
+    editSongTransaction(editSongIndex,newSongName,newArtistName,newYoutubeId){
+        let transaction=new EditSong_Transaction(this,editSongIndex,newSongName,newArtistName,newYoutubeId);
+        this.tps.addTransaction(transaction);
+        this.view.updateToolbarButtons(this);
+    }
+
+    addNewSong(initSong, initArtist,initYoutubeId) {
+        let newSong = { //create a song object
+            title:initSong, 
+            artist:initArtist,
+            youTubeId:initYoutubeId
+        };
+        this.currentList.songs.push(newSong); //add the object into the song array
+        this.view.refreshPlaylist(this.currentList); //automatically refresh all the song cards for playlist
+        this.saveLists(); //save the changes
+
+        return newSong;
+    }
+    insertDeletedSongBack(index,deletedSongObject){
+        currentList.songs.splice(index, 0 , deletedSongObject);
+        this.view.refreshPlaylist(this.currentList); //automatically refresh all the song cards for playlist
+        this.saveLists(); //save the changes
+
     }
 }
