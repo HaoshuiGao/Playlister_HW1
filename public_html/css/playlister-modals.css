@@ -95,6 +95,7 @@ span {
   margin-top: 1rem;
 }
 
+
 /* ANIMATIONS
 –––––––––––––––––––––––––––––––––––––––––––––––––– */
 [data-animation] .modal-root {
@@ -143,6 +144,7 @@ span {
 [data-animation="zoomInOut"].is-visible .modal-root,
 [data-animation="rotateInOutDown"].is-visible .modal-root {
   transform: none;
+  
 }
 
 @keyframes mixInAnimations {
@@ -189,4 +191,6 @@ span {
   100% {
     transform: rotate(0deg);
   }
+
+  
 }

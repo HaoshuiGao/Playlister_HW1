@@ -50,6 +50,7 @@ export default class PlaylisterController {
             let newList = this.model.addNewList("Untitled", []);
             this.model.loadList(newList.id);
             this.model.saveLists();
+            
         }
         // HANDLER FOR UNDO BUTTON
         document.getElementById("undo-button").onmousedown = (event) => {
@@ -58,22 +59,22 @@ export default class PlaylisterController {
         // HANDLER FOR REDO BUTTON
         document.getElementById("redo-button").onmousedown = (event) => {
             this.model.redo();
-            this.model.view.enableButton("undo-button");
-            this.model.view.enableButton("redo-button");
         }
         // HANDLER FOR CLOSE LIST BUTTON
         document.getElementById("close-button").onmousedown = (event) => {
             this.model.unselectAll();
             this.model.unselectCurrentList();
 
-            //close the list, disable all buttons except add-list
+            //foolproof
+            //close the list, enable add-list-button and disable add,redo,undo,close
             this.model.view.enableButton("add-list-button");
-            this.model.view.disableButton("add-song-button");
-            this.model.view.disableButton("undo-button");
-            this.model.view.disableButton("redo-button");
-            this.model.view.disableButton("close-button");
-
-
+            //CLOSE LIST->SET CURRENTLIST AS NULL->DISABLE ADDSONG,UNDO,REDO,CLOSE
+            if(this.model.currentList==null){
+                this.model.view.disableButton("add-song-button");
+                this.model.view.disableButton("undo-button");
+                this.model.view.disableButton("redo-button");
+                this.model.view.disableButton("close-button");
+            }
         }
         // HANDLER FOR ADDING A NEW SONG BUTTON
         document.getElementById("add-song-button").onmousedown = (event) => {
@@ -85,7 +86,12 @@ export default class PlaylisterController {
             };
             //add the transaction into the stack and perform do
             this.model.addSongTransaction(newSong.title, newSong.artist, newSong.youTubeId);
-            this.model.view.enableButton("undo-button");
+
+            //foolproof
+            //ADD A SONG STILL COUNT AS EDIT->CURRENTLIST NOT NULL-> SO DISABLE ADD LIST
+            if(!(this.model.currentList==null)){
+                this.model.view.disableButton("add-list-button");
+            }
         }
     }
 
@@ -113,8 +119,24 @@ export default class PlaylisterController {
             // CLOSE THE MODAL
             let deleteListModal = document.getElementById("delete-list-modal");
             deleteListModal.classList.remove("is-visible");
-            this.model.view.enableButton("add-list-button");
-
+            
+            //foolproof
+            //IF DELETE LIST WHEN NO LIST IS SELECTED
+            if(!(this.model.hasCurrentList())){
+                this.model.view.enableButton("add-list-button");
+                this.model.view.disableButton("add-song-button");
+                this.model.view.disableButton("redo-button");
+                this.model.view.disableButton("undo-button");
+                this.model.view.disableButton("close-button");
+            }
+            //If DELETE LIST WHEN THERE IS A SELECTED LIST
+            else{
+                this.model.view.disableButton("add-list-button");
+                this.model.view.enableButton("add-song-button");
+                this.model.view.enableButton("redo-button");
+                this.model.view.enableButton("undo-button");
+                this.model.view.enableButton("close-button");
+            }
         }
 
         // RESPOND TO THE USER CLOSING THE DELETE PLAYLIST MODAL
@@ -126,7 +148,18 @@ export default class PlaylisterController {
             // CLOSE THE MODAL
             let deleteListModal = document.getElementById("delete-list-modal");
             deleteListModal.classList.remove("is-visible");
-            this.model.view.enableButton("add-list-button");
+
+            //foolproof
+            //IF CLOSE DELETE LIST WHEN NO LIST IS SELECTED
+            if(!(this.model.hasCurrentList())){
+                this.model.view.enableButton("add-list-button");
+                this.model.view.disableButton("add-song-button");
+                this.model.view.disableButton("redo-button");
+                this.model.view.disableButton("undo-button");
+                this.model.view.disableButton("close-button");
+            }
+            
+
 
         }      
         
@@ -140,7 +173,7 @@ export default class PlaylisterController {
 
             // DELETE THE SONG, THIS IS NOT UNDOABLE
             this.model.removeSongTransaction(deleteSongIndex);
-            //this.model.removeSong(deleteSongIndex);
+            
 
             // ALLOW OTHER INTERACTIONS
             this.model.toggleConfirmDialogOpen();
@@ -148,6 +181,12 @@ export default class PlaylisterController {
             // CLOSE THE MODAL
             let deleteSongModal = document.getElementById("delete-song-modal");
             deleteSongModal.classList.remove("is-visible");
+
+            //foolproof
+            //DELETE SONG STILL COUNT AS EDIT->CURRENTLIST NOT NULL-> SO DISABLE ADD LIST
+            if(!(this.model.currentList==null)){
+                this.model.view.disableButton("add-list-button");
+            }
         }
 
         // RESPOND TO THE USER CLOSING THE DELETE SONG MODAL
@@ -159,6 +198,12 @@ export default class PlaylisterController {
             // CLOSE THE MODAL
             let deleteSongModal = document.getElementById("delete-song-modal");
             deleteSongModal.classList.remove("is-visible");
+
+            //foolproof
+            //DELETE SONG STILL COUNT AS EDIT->CURRENTLIST NOT NULL-> SO DISABLE ADD LIST
+            if(!(this.model.currentList==null)){
+                this.model.view.disableButton("add-list-button");
+            }
         }      
 
          // RESPOND TO THE USER CONFIRMING TO EDIT A PLAYLIST
@@ -168,12 +213,12 @@ export default class PlaylisterController {
              // IN THE MODEL OBJECT AT THE TIME THE ORIGINAL
              // BUTTON PRESS EVENT HAPPENED
              let editSongIndex = this.model.getEditSongIndex();
+             //GET THE VALUE FOR NEW SONG, ARTIST AND YOUTUBEID
              let newSongName=document.getElementById("edit-song-prompt").value;
              let newArtistName=document.getElementById("edit-artist-prompt").value;
              let newYoutubeId=document.getElementById("edit-youtubeid-prompt").value;
 
-             // EDIT THE LIST, THIS IS NOT UNDOABLE
-             //this.model.editSong(editSongIndex,newSongName,newArtistName,newYoutubeId);
+             // EDIT THE LIST AND ADD TO TRANSACTION, THIS IS NOT UNDOABLE
              this.model.editSongTransaction(editSongIndex,newSongName,newArtistName,newYoutubeId);
              
              // ALLOW OTHER INTERACTIONS
@@ -182,6 +227,12 @@ export default class PlaylisterController {
              // CLOSE THE MODAL
              let editSongModal = document.getElementById("edit-song-modal");
              editSongModal.classList.remove("is-visible");
+            
+             //foolproof
+            //EDIT A SONG->CURRENTLIST NOT NULL-> SO DISABLE ADD LIST
+            if(!(this.model.currentList==null)){
+                this.model.view.disableButton("add-list-button");
+            }
              
          }
 
@@ -194,6 +245,12 @@ export default class PlaylisterController {
             // CLOSE THE MODAL
             let editSongModal = document.getElementById("edit-song-modal");
             editSongModal.classList.remove("is-visible");
+
+            //foolproof
+            //EDIT SONG STILL COUNT AS EDIT->CURRENTLIST NOT NULL-> SO DISABLE ADD LIST
+            if(!(this.model.currentList==null)){
+                this.model.view.disableButton("add-list-button");
+            }
         }  
 
     }
@@ -218,14 +275,12 @@ export default class PlaylisterController {
             // GET THE SELECTED LIST
             this.model.loadList(id);
 
-            //selected to edit this list, so disable and enable the buttons
+            //selected a list to edit->, disable add-list-buttons
             this.model.view.disableButton("add-list-button");
+            //selected a list->enable add-song-buttons
             this.model.view.enableButton("add-song-button");
-            this.model.view.enableButton("close-button");
-
-
-
         }
+
         // HANDLES DELETING A PLAYLIST
         document.getElementById("delete-list-" + id).onmousedown = (event) => {
             // DON'T PROPOGATE THIS INTERACTION TO LOWER-LEVEL CONTROLS
@@ -375,6 +430,7 @@ export default class PlaylisterController {
             // GET THE CARD
             let card = document.getElementById("playlist-card-" + (i + 1));
          // HANDLES EDITING A SONG
+         // CHECK TAHT EACH SONG IS I
             card.ondblclick = (event) => {
             // DON'T PROPOGATE THIS INTERACTION TO LOWER-LEVEL CONTROLS
             this.ignoreParentClick(event);
@@ -388,23 +444,17 @@ export default class PlaylisterController {
         
             
            // let songName = this.model.getSong(i).title;
+           //SET THE VALUE TO RESPECTIVE TITLE,ARTIST AND YOUTUBEID: USED FOR DEFAULT VALUE IN EDIT BOXES
             document.getElementById("edit-song-prompt").value=this.model.getSong(i).title;
             document.getElementById("edit-artist-prompt").value=this.model.getSong(i).artist;
             document.getElementById("edit-youtubeid-prompt").value=this.model.getSong(i).youTubeId;
             
-           // document.getElementById("edit-song-prompt").setAttribute("value","empty");
-           // document.getElementById("edit-artist-prompt").setAttribute("value","empty");
-           // document.getElementById("edit-youtubeid-prompt").setAttribute("value","empty");
-            
             let editSongModal = document.getElementById("edit-song-modal");
            
-
             // OPEN UP THE DIALOG
             editSongModal.classList.add("is-visible");
             this.model.toggleConfirmDialogOpen();
         }
-
-        
     }
 
     }

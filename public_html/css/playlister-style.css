@@ -167,3 +167,18 @@ body {
 .disabled:hover {
   color: var(--swatch-neutral);
 }
+
+label{
+  display:inline-grid;
+  grid-template-columns: max-content max-content;
+  grid-gap:50px;
+  width: 50%;
+  font-size: 50%;
+}
+.text-input{
+  height:30px;
+}
+
+
+
+

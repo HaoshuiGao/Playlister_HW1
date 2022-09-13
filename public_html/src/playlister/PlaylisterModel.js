@@ -41,6 +41,7 @@ export default class PlaylisterModel {
 
         // THE MODAL IS NOT CURRENTLY OPEN
         this.confirmDialogOpen = false;
+
     }
 
     // FOR MVC STUFF
@@ -89,7 +90,7 @@ export default class PlaylisterModel {
         }
         return -1;
     }
-
+    
     getDeleteListId() {
         return this.deleteListId;
     }
@@ -97,15 +98,18 @@ export default class PlaylisterModel {
     setDeleteListId(initId) {
         this.deleteListId = initId;
     }
-//self
+    //self
     getDeleteSongIndex() {
         return this.deleteSongIndex;
     }
-//self
+    //self
+    //RECORD THE INDEX OF THE SONG THAT IS GOING TO BE DELETE
     setDeleteSongIndex(initId) {
         this.deleteSongIndex = initId;
     }
+    
     //self
+    //RECORD THE INDEX OF SONG THAT IS GOING TO BE EDIT
     getEditSongIndex(){
         return this.editSongIndex;
     }
@@ -114,21 +118,8 @@ export default class PlaylisterModel {
     setEditSongIndex(initId){
         this.editSongIndex=initId;
     }
-    //flag to do addSong transaction
-    getIsAdded(){
-        return this.isAdded;
-    }
-    setIsAdded(initId){
-        this.isAdded=initId;
-    }
-    //flag to do removeSong transaction
-    getIsRemoved(){
-        return this.isRemoved;
-    }
-    setIsRemoved(initId){
-        this.isRemoved=initId;
-    }
-
+    
+    //DISABLE AND ENABLE TOOLBUTTON WHEN A CONFIRM MODEL OPENS UP
     toggleConfirmDialogOpen() {
         this.confirmDialogOpen = !this.confirmDialogOpen;
         this.view.updateToolbarButtons(this);
@@ -284,6 +275,7 @@ export default class PlaylisterModel {
 
     }
 
+    //EDIT THE SONG METHOD
     editSong(index,newSong,newArtist,newYoutubeId){
         this.currentList.songs[index].title=newSong;
         this.currentList.songs[index].artist=newArtist;
@@ -340,14 +332,13 @@ export default class PlaylisterModel {
         let deletedSong=this.currentList.songs[this.deleteSongIndex];
         let transaction=new RemoveSong_Transaction(this, indexToRemove,deletedSong);
         this.tps.addTransaction(transaction);
-        this.view.updateToolbarButtons(this);
     }
     editSongTransaction(editSongIndex,newSongName,newArtistName,newYoutubeId){
         let transaction=new EditSong_Transaction(this,editSongIndex,newSongName,newArtistName,newYoutubeId);
         this.tps.addTransaction(transaction);
-        this.view.updateToolbarButtons(this);
     }
 
+    //ADD NEW SONG INTO CURRENT LIST
     addNewSong(initSong, initArtist,initYoutubeId) {
         let newSong = { //create a song object
             title:initSong, 
@@ -360,8 +351,10 @@ export default class PlaylisterModel {
 
         return newSong;
     }
+
+    //USED FOR REDO DELETE SONG FUNCTION
     insertDeletedSongBack(index,deletedSongObject){
-        currentList.songs.splice(index, 0 , deletedSongObject);
+        this.currentList.songs.splice(index, 0 , deletedSongObject);
         this.view.refreshPlaylist(this.currentList); //automatically refresh all the song cards for playlist
         this.saveLists(); //save the changes
 
